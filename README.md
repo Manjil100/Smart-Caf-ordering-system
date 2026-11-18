@@ -53,6 +53,4 @@ The SQL for the tables, security rules, functions and sample menu is in `supabas
 | `/staff/menu` | Dishes (sold-out switch) |
 | `/staff/history` | History and sales |
 
-## AI assistance
 
-Claude and Claude Code were used as development assistants on this project, as noted in my weekly reflections. Each change was reviewed and tested.
