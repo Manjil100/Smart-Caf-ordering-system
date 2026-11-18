@@ -17,14 +17,19 @@ function KitchenWait() {
   }, [])
 
   if (!wait) return null
-  if (wait.active_orders === 0) {
-    return <p className="wait">No queue right now. Orders are usually ready in a few minutes.</p>
-  }
+
+  const quiet = wait.active_orders === 0
   return (
-    <p className="wait">
-      {wait.active_orders} {wait.active_orders === 1 ? 'order' : 'orders'} ahead. Estimated wait about{' '}
-      <strong>{wait.queue_minutes} minutes</strong>.
-    </p>
+    <div className={`wait ${quiet ? 'quiet' : 'busy'}`} role="status">
+      <span className="wait-number">{quiet ? '0' : wait.queue_minutes}</span>
+      <span>
+        <strong>{quiet ? 'No queue right now' : `About ${wait.queue_minutes} min wait`}</strong>
+        <br />
+        <span className="muted small">
+          {quiet ? 'Orders are usually ready in a few minutes.' : `${wait.active_orders} ${wait.active_orders === 1 ? 'order' : 'orders'} ahead of you`}
+        </span>
+      </span>
+    </div>
   )
 }
 

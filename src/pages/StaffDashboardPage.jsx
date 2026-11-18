@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
-import { formatPrice, formatTime, nextStatus, STATUS_LABELS } from '../lib/format.js'
+import { formatPrice, formatTime, nextStatus, STATUS_ICONS, STATUS_LABELS } from '../lib/format.js'
+
+// The three columns on the dashboard, one per active status.
+const COLUMNS = [
+  { status: 'pending', title: 'New' },
+  { status: 'preparing', title: 'Preparing' },
+  { status: 'ready', title: 'Ready to collect' },
+]
 
 // Feature 3: staff see active orders live and move each one to its next status.
 function StaffDashboardPage() {
@@ -45,32 +52,53 @@ function StaffDashboardPage() {
     else loadOrders()
   }
 
-  if (loading) return <p>Loading orders…</p>
+  if (loading) return <p className="muted">Loading orders…</p>
 
   return (
     <>
       <h1>Orders</h1>
       {error && <p className="error" role="alert">{error}</p>}
-      {orders.length === 0 && <p>No active orders right now. New orders appear here automatically.</p>}
-      <div className="order-grid">
-        {orders.map((order) => (
-          <article key={order.id} className={`card order ${order.status}`}>
-            <header className="order-head">
-              <h2>#{order.order_number} {order.customer_name}</h2>
-              <span className="tag">{STATUS_LABELS[order.status]}</span>
-            </header>
-            <p className="small muted">{formatTime(order.created_at)} · {formatPrice(order.total)}</p>
-            <ul className="plain">
-              {order.order_items.map((item, i) => (
-                <li key={i}>{item.quantity} × {item.menu_items.name}</li>
-              ))}
-            </ul>
-            <button type="button" onClick={() => moveOn(order)}>
-              Mark as {STATUS_LABELS[nextStatus(order.status)].toLowerCase()}
-            </button>
-          </article>
+
+      {/* Quick counts at the top */}
+      <div className="stats">
+        {COLUMNS.map((col) => (
+          <div key={col.status} className={`stat-card ${col.status}`}>
+            <span className="stat-icon" aria-hidden="true">{STATUS_ICONS[col.status]}</span>
+            <span className="stat">{orders.filter((o) => o.status === col.status).length}</span>
+            <span>{col.title}</span>
+          </div>
         ))}
       </div>
+
+      <div className="board">
+        {COLUMNS.map((col) => {
+          const inColumn = orders.filter((o) => o.status === col.status)
+          return (
+            <section key={col.status} className="column" aria-labelledby={`col-${col.status}`}>
+              <h2 id={`col-${col.status}`}>{col.title} <span className="chip">{inColumn.length}</span></h2>
+              {inColumn.length === 0 && <p className="muted small">Nothing here.</p>}
+              {inColumn.map((order) => (
+                <article key={order.id} className={`card order ${order.status}`}>
+                  <header className="order-head">
+                    <h3>#{order.order_number} {order.customer_name}</h3>
+                    <span className="muted small">{formatTime(order.created_at)}</span>
+                  </header>
+                  <ul className="plain">
+                    {order.order_items.map((item, i) => (
+                      <li key={i}><strong>{item.quantity}×</strong> {item.menu_items.name}</li>
+                    ))}
+                  </ul>
+                  <p className="small muted">{formatPrice(order.total)}</p>
+                  <button type="button" className="wide" onClick={() => moveOn(order)}>
+                    {STATUS_ICONS[nextStatus(order.status)]} Mark as {STATUS_LABELS[nextStatus(order.status)].toLowerCase()}
+                  </button>
+                </article>
+              ))}
+            </section>
+          )
+        })}
+      </div>
+      <p className="muted small">New orders appear here automatically.</p>
     </>
   )
 }

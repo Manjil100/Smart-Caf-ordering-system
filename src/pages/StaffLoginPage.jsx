@@ -23,20 +23,22 @@ function StaffLoginPage() {
   }
 
   return (
-    <>
+    <section className="card narrow login">
+      <span className="empty-icon" aria-hidden="true">🔐</span>
       <h1>Staff login</h1>
+      <p className="muted">For café staff only.</p>
       {session && !isStaff && !loading && (
         <p className="error" role="alert">This account isn’t set up as staff.</p>
       )}
-      <form onSubmit={handleSubmit} className="card narrow">
+      <form onSubmit={handleSubmit}>
         <label htmlFor="email">Email</label>
         <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
         <label htmlFor="password">Password</label>
         <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
         {error && <p className="error" role="alert">{error}</p>}
-        <button type="submit" disabled={sending}>{sending ? 'Logging in…' : 'Log in'}</button>
+        <button type="submit" className="wide" disabled={sending}>{sending ? 'Logging in…' : 'Log in'}</button>
       </form>
-    </>
+    </section>
   )
 }
 

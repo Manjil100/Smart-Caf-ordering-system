@@ -7,6 +7,7 @@ import OrderStatusPage from './pages/OrderStatusPage.jsx'
 import StaffLoginPage from './pages/StaffLoginPage.jsx'
 import StaffDashboardPage from './pages/StaffDashboardPage.jsx'
 import StaffHistoryPage from './pages/StaffHistoryPage.jsx'
+import StaffMenuPage from './pages/StaffMenuPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 
 // App is the map of the whole website: each address shows one page.
@@ -25,6 +26,7 @@ function App() {
           {/* Staff pages (RequireStaff sends anyone else to the login page) */}
           <Route path="/staff/login" element={<StaffLoginPage />} />
           <Route path="/staff" element={<RequireStaff><StaffDashboardPage /></RequireStaff>} />
+          <Route path="/staff/menu" element={<RequireStaff><StaffMenuPage /></RequireStaff>} />
           <Route path="/staff/history" element={<RequireStaff><StaffHistoryPage /></RequireStaff>} />
 
           <Route path="*" element={<NotFoundPage />} />

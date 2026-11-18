@@ -9,8 +9,8 @@ function StaffHistoryPage() {
 
   useEffect(() => {
     async function load() {
-      // Last 30 days of orders, newest first.
-      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      // Last 7 days of orders, newest first.
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
       const { data, error } = await supabase
         .from('orders')
         .select('id, order_number, customer_name, status, total, created_at')
@@ -26,58 +26,72 @@ function StaffHistoryPage() {
     load()
   }, [])
 
-  if (status === 'loading') return <p>Loading history…</p>
+  if (status === 'loading') return <p className="muted">Loading history…</p>
   if (status === 'error') return <p className="error">History couldn't be loaded.</p>
 
-  // Sales per day: group the orders by date and add up their totals.
-  const days = {}
+  // Build the last 7 days (including days with no orders), oldest first, for the chart.
+  const days = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    days.push({ key: d.toDateString(), label: d.toLocaleDateString('en-NZ', { weekday: 'short' }), orders: 0, sales: 0 })
+  }
   for (const order of orders) {
-    const day = new Date(order.created_at).toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' })
-    days[day] = days[day] || { orders: 0, sales: 0 }
-    days[day].orders += 1
-    days[day].sales += Number(order.total)
+    const day = days.find((d) => d.key === new Date(order.created_at).toDateString())
+    if (day) {
+      day.orders += 1
+      day.sales += Number(order.total)
+    }
   }
   const totalSales = orders.reduce((sum, o) => sum + Number(o.total), 0)
   const average = orders.length ? totalSales / orders.length : 0
+  const best = Math.max(...days.map((d) => d.sales), 1) // tallest bar, so the others scale to it
 
   return (
     <>
       <h1>History and sales</h1>
-      <p className="muted">The last 30 days.</p>
+      <p className="muted">The last 7 days.</p>
 
       <div className="stats">
-        <div className="card"><p className="muted small">Orders</p><p className="stat">{orders.length}</p></div>
-        <div className="card"><p className="muted small">Sales</p><p className="stat">{formatPrice(totalSales)}</p></div>
-        <div className="card"><p className="muted small">Average order</p><p className="stat">{formatPrice(average)}</p></div>
+        <div className="stat-card ready"><span className="stat-icon" aria-hidden="true">🧾</span><span className="stat">{orders.length}</span><span>Orders</span></div>
+        <div className="stat-card preparing"><span className="stat-icon" aria-hidden="true">💰</span><span className="stat">{formatPrice(totalSales)}</span><span>Sales</span></div>
+        <div className="stat-card pending"><span className="stat-icon" aria-hidden="true">📊</span><span className="stat">{formatPrice(average)}</span><span>Average order</span></div>
       </div>
 
-      <h2>By day</h2>
-      <table>
-        <thead><tr><th>Day</th><th>Orders</th><th>Sales</th></tr></thead>
-        <tbody>
-          {Object.entries(days).map(([day, d]) => (
-            <tr key={day}><td>{day}</td><td>{d.orders}</td><td>{formatPrice(d.sales)}</td></tr>
+      <section className="card">
+        <h2>Sales per day</h2>
+        <div className="chart" role="img" aria-label={days.map((d) => `${d.label} ${formatPrice(d.sales)}`).join(', ')}>
+          {days.map((d) => (
+            <div key={d.key} className="bar-col">
+              <span className="bar-value">{d.sales > 0 ? formatPrice(d.sales) : ''}</span>
+              <span className="bar" style={{ height: `${(d.sales / best) * 100}%` }} />
+              <span className="bar-label">{d.label}</span>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      </section>
 
-      <h2>All orders</h2>
-      {orders.length === 0 ? <p>No orders yet.</p> : (
-        <table>
-          <thead><tr><th>#</th><th>Time</th><th>Name</th><th>Status</th><th>Total</th></tr></thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id}>
-                <td>{o.order_number}</td>
-                <td>{new Date(o.created_at).toLocaleDateString('en-NZ')} {formatTime(o.created_at)}</td>
-                <td>{o.customer_name}</td>
-                <td>{STATUS_LABELS[o.status]}</td>
-                <td>{formatPrice(o.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <section className="card">
+        <h2>All orders</h2>
+        {orders.length === 0 ? <p className="muted">No orders yet.</p> : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>When</th><th>Name</th><th>Status</th><th>Total</th></tr></thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id}>
+                    <td>{o.order_number}</td>
+                    <td>{new Date(o.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })} {formatTime(o.created_at)}</td>
+                    <td>{o.customer_name}</td>
+                    <td><span className={`chip ${o.status}`}>{STATUS_LABELS[o.status]}</span></td>
+                    <td>{formatPrice(o.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </>
   )
 }

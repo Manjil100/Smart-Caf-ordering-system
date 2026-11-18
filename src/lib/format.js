@@ -23,3 +23,24 @@ export function nextStatus(status) {
   const i = STATUS_STEPS.indexOf(status)
   return i >= 0 && i < STATUS_STEPS.length - 1 ? STATUS_STEPS[i + 1] : null
 }
+
+// A small picture for each menu category, so the menu is easy to scan.
+const CATEGORY_ICONS = {
+  Coffee: '☕',
+  'Other drinks': '🧃',
+  Breakfast: '🍳',
+  Lunch: '🥪',
+  Cabinet: '🧁',
+}
+
+export function categoryIcon(name) {
+  return CATEGORY_ICONS[name] || '🍽️'
+}
+
+// One icon per order status, used on the tracker and the staff dashboard.
+export const STATUS_ICONS = {
+  pending: '🧾',
+  preparing: '👩‍🍳',
+  ready: '🔔',
+  completed: '✅',
+}

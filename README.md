@@ -10,9 +10,12 @@ A web app where café customers order from their phone and staff manage the orde
 2. **Cart and ordering**: add dishes, change quantities, enter a name and place the order. Payment is at the counter.
 3. **Staff order dashboard**: staff log in, see active orders live, and move each order to its next status.
 4. **Live order tracking**: the customer's page updates as the order goes pending → preparing → ready → completed.
-5. **Order history and sales**: the last 30 days of orders, with orders and sales per day.
+5. **Order history and sales**: the last 7 days of orders, with totals, average order and a sales-per-day chart.
 
-Extra: an estimated wait time, based on dish preparation times and the current queue.
+Extras:
+- An estimated wait time, based on dish preparation times and the current queue.
+- A sold-out switch: staff can hide a dish from the menu instantly (`/staff/menu`).
+- A sales chart for the last 7 days on the History page.
 
 ## Technology
 
@@ -47,6 +50,7 @@ The SQL for the tables, security rules, functions and sample menu is in `supabas
 | `/order/:orderId` | Order tracking |
 | `/staff/login` | Staff login |
 | `/staff` | Staff order dashboard |
+| `/staff/menu` | Dishes (sold-out switch) |
 | `/staff/history` | History and sales |
 
 ## AI assistance

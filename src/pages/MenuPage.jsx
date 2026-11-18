@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
-import { formatPrice } from '../lib/format.js'
+import { categoryIcon, formatPrice } from '../lib/format.js'
 import { useCart } from '../context/CartContext.jsx'
 import KitchenWait from '../components/KitchenWait.jsx'
 
 // Feature 1: customers browse the menu and add dishes to their cart.
 function MenuPage() {
-  const { addItem, count } = useCart()
+  const { items: cartItems, addItem, count, total } = useCart()
   const [categories, setCategories] = useState([])
   const [dishes, setDishes] = useState([])
   const [status, setStatus] = useState('loading') // 'loading' | 'error' | 'ready'
-  const [added, setAdded] = useState(null)
 
   useEffect(() => {
     async function loadMenu() {
@@ -35,50 +34,75 @@ function MenuPage() {
     loadMenu()
   }, [])
 
-  function handleAdd(dish) {
-    addItem(dish)
-    setAdded(dish.name)
+  // How many of a dish are already in the cart (shown on its card).
+  function inCart(id) {
+    return cartItems.find((line) => line.id === id)?.quantity || 0
   }
 
-  if (status === 'loading') return <p>Loading the menu…</p>
-  if (status === 'error') return <p className="error">Sorry, the menu couldn't be loaded. Please refresh the page.</p>
+  // Only show categories that have at least one dish available.
+  const sections = categories
+    .map((category) => ({ ...category, dishes: dishes.filter((d) => d.category_id === category.id) }))
+    .filter((section) => section.dishes.length > 0)
 
   return (
     <>
-      <h1>Menu</h1>
-      <KitchenWait />
+      <section className="welcome card">
+        <div>
+          <p className="eyebrow">Order ahead, skip the queue</p>
+          <h1>Good food, made to order</h1>
+          <p className="muted">Pick your favourites, place your order, and we'll let you know the moment it's ready. Pay at the counter when you collect.</p>
+        </div>
+        <KitchenWait />
+      </section>
 
-      {categories.map((category) => {
-        const inCategory = dishes.filter((dish) => dish.category_id === category.id)
-        if (inCategory.length === 0) return null
-        return (
-          <section key={category.id} className="category">
-            <h2>{category.name}</h2>
-            <ul className="dish-list">
-              {inCategory.map((dish) => (
-                <li key={dish.id} className="dish">
-                  <div>
+      {status === 'loading' && <p className="muted">Loading the menu…</p>}
+      {status === 'error' && <p className="error">Sorry, the menu couldn't be loaded. Please refresh the page.</p>}
+
+      {status === 'ready' && (
+        <>
+          {/* Buttons that jump to each part of the menu */}
+          <nav className="pills" aria-label="Menu categories">
+            {sections.map((section) => (
+              <a key={section.id} href={`#cat-${section.id}`} className="pill">
+                <span aria-hidden="true">{categoryIcon(section.name)}</span> {section.name}
+              </a>
+            ))}
+          </nav>
+
+          {sections.map((section) => (
+            <section key={section.id} id={`cat-${section.id}`} className="category">
+              <h2>
+                <span aria-hidden="true">{categoryIcon(section.name)}</span> {section.name}
+              </h2>
+              <ul className="dish-grid">
+                {section.dishes.map((dish) => (
+                  <li key={dish.id} className="dish card">
+                    <div className="dish-top">
+                      <span className="dish-icon" aria-hidden="true">{categoryIcon(section.name)}</span>
+                      <span className="chip">⏱ {dish.prep_time_minutes} min</span>
+                    </div>
                     <h3>{dish.name}</h3>
-                    <p className="muted">{dish.description}</p>
-                    <p className="small muted">About {dish.prep_time_minutes} min</p>
-                  </div>
-                  <div className="dish-buy">
-                    <span className="price">{formatPrice(dish.price)}</span>
-                    <button type="button" onClick={() => handleAdd(dish)} aria-label={`Add ${dish.name} to cart`}>
-                      Add
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      })}
+                    <p className="muted small">{dish.description}</p>
+                    <div className="dish-bottom">
+                      <span className="price">{formatPrice(dish.price)}</span>
+                      <button type="button" onClick={() => addItem(dish)} aria-label={`Add ${dish.name} to cart`}>
+                        {inCart(dish.id) > 0 ? `Add another (${inCart(dish.id)})` : 'Add'}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </>
+      )}
 
       {count > 0 && (
         <div className="cart-bar" role="status">
-          <span>{added ? `${added} added. ` : ''}{count} in cart</span>
-          <Link to="/cart" className="button">View cart</Link>
+          <span>
+            <strong>{count} {count === 1 ? 'item' : 'items'}</strong> · {formatPrice(total)}
+          </span>
+          <Link to="/cart" className="button">View cart →</Link>
         </div>
       )}
     </>

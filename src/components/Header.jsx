@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 
-// Shown at the top of every page.
+// Shown at the top of every page. Staff see extra links once they log in.
 function Header() {
   const { count } = useCart()
   const { isStaff } = useAuth()
@@ -11,15 +11,18 @@ function Header() {
   return (
     <header className="header">
       <div className="container header-inner">
-        <Link to="/" className="brand">My Café</Link>
+        <Link to="/" className="brand">
+          <span className="brand-icon" aria-hidden="true">☕</span> My Café
+        </Link>
         <nav aria-label="Main">
           <NavLink to="/" end>Menu</NavLink>
-          <NavLink to="/cart">
+          <NavLink to="/cart" className="cart-link">
             Cart{count > 0 && <span className="badge" aria-label={`${count} items`}>{count}</span>}
           </NavLink>
           {isStaff ? (
             <>
               <NavLink to="/staff" end>Orders</NavLink>
+              <NavLink to="/staff/menu">Dishes</NavLink>
               <NavLink to="/staff/history">History</NavLink>
               <button type="button" className="link-button" onClick={() => supabase.auth.signOut()}>
                 Log out
